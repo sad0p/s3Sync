@@ -2,20 +2,19 @@ import os
 
 class Parse:
     def __init__(self, config_file):
-        self.rootdir = None
+        self.root_dir = None
         self.db_location = None
-        
         with open(config_file, 'r') as fh:
             for line in fh:
                 if line[0] != '#' and line[0] != '\n':
                     line = line.replace(' ', '').replace('\n', '')
                     variable, value = line.split('=')
                     if variable == 'ROOT_DIR':
-                        self.rootdir = value
+                        self.root_dir = value
                     if variable == 'DB_LOCATION':
                         self.db_location = value            
 
-        if self.rootdir == '':
+        if self.root_dir == '':
             print("Error: config file -> {} no ROOT_DIR specified".format(config_file))
         if self.db_location == '':
             print("Error: config file -> {} no DB_LOCATION specified".format(config_file))
@@ -34,8 +33,8 @@ def write_config(s3sync_config, home_dir):
     fh.close()
     return
 
-def in_scope(rootdir):
-    if os.path.commonpath([rootdir, os.getcwd()]) != rootdir:
+def in_scope(root_dir, target_dir):
+    if os.path.commonpath([root_dir, target_dir]) != root_dir:
         return False
     else:
         return True
