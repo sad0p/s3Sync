@@ -52,21 +52,42 @@ def set_state():
 
 def re_init(target_dir, config_obj, verbose=True):
     pass
+
+def path_to_tracker(target_path, config_obj):
+    tracker = config_obj.db_location + '/' + s3hash.genpath_hash(target_path)
+    return tracker
+
+def update_tracker(tracker, config_obj, verbose=True):
+    new_hash_db = {}
+    tracker_location = config_obj.db_location + '/' + tracker
+        
+    with open(tracker_location, ) as fh:
+        hash_db = json.load(fh)
+        target_dir_decode = s3hash.decode_path(tracker)
+        print("Tracker path -> {}".format(target_dir_decode))
+    
+    file_list = dirmon.gen_file_list(target_dir_decode)
+    new_hash_db = s3hash.gen_hash_db(file_list)
+    
+    print('new_hash_db len -> {} | hash_db -> {}'.format(len(new_hash_db.keys()), len(hash_db)))
+    if len(new_hash_db) != len(hash_db):
+        print("changes occurred")
+    else:
+        print("no changes occured")
     
 
 def init(target_dir, config_obj, verbose=True):
-    
     hash_db = {}
     
     if config.in_scope(config_obj.root_dir, target_dir) ==  False:
         sys.exit("[-] Error: Outside of ROOT_DIR ({}) scope".format(config_obj.root_dir))
 
-    target_dir_hash = s3hash.genpath_hash(target_dir)
-    if dirmon.is_tracking(target_dir_hash, config_obj.db_location) == True:
+    target_dir_encode = s3hash.encode_path(target_dir)
+    if dirmon.is_tracking(target_dir_encode, config_obj.db_location) == True:
         sys.exit("[-] Error: {} is already being tracked".format(target_dir))
     else:
         print("[+] Initiating tracking of {}".format(target_dir))
-        tracker_path = dirmon.create_tracker(target_dir_hash, config_obj.db_location)
+        tracker_path = dirmon.create_tracker(target_dir_encode, config_obj.db_location)
         ignore_file = target_dir + '/' + '.s3ignore'
 
         if os.path.exists(ignore_file):
@@ -76,13 +97,11 @@ def init(target_dir, config_obj, verbose=True):
             target_dir_list = dirmon.gen_file_list(target_dir) + '/' + '.s3ignore'
 
         with open(tracker_path, 'w') as fh:
-            for item in target_dir_list:
-                if verbose == True:
-                    print("[+] tracking -> {}".format(item))
-                item_hash = s3hash.genfile_hash(item)
-                hash_db[item] = item_hash
-                json.dump(hash_db, fh)
-                #fh.write('{} -> {}\n'.format(item, item_hash))
+            hash_db = s3hash.gen_hash_db(target_dir_list)
+            if verbose == True:
+                for k in enumerate(hash_db.keys()):
+                    print("[+] tracking -> {}".format(k))
+            json.dump(hash_db, fh)
         return
 
 
@@ -92,9 +111,6 @@ def usage():
     print("List of Commands:\n")
     print("init    --- start tracking and backing up files in current directory\n")
 
-
-
-    
 def main():
 
     opt_init_dir = None
@@ -112,6 +128,9 @@ def main():
             opt_init_dir = os.getcwd()
             
         init(opt_init_dir, config_obj)
+    
+    if sys.argv[1] == 'update':
+        update_tracker('L2hvbWUvc2FkMHAvczNzeWNfYmFja3VwZGlyLw==', config_obj)
    
     
 if __name__ == '__main__':
