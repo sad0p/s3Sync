@@ -159,11 +159,10 @@ def usage():
 
     print("{} [command] [subcommands]\n".format(sys.argv[0]))
     print("List of Commands:\n")
-    print("init    --- start tracking and backing up files in current\
-          directory")
-    print(
-        "update  --- updates for the directory trackers for changes,\
-        and pushes additions or file modifications to s3")
+    print("init    --- start tracking and backing up files in current "
+          "directory")
+    print("update  --- updates for the directory trackers for changes "
+          "and pushes additions or file modifications to s3")
 
 
 def main():
