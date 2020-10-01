@@ -15,15 +15,16 @@ def gen_file_list(root_dir):
 
 def create_tracker(hash_name, db_location):
 
-    full_path = db_location + '/' + hash_name
+    full_path = db_location + '/trackers/' + hash_name
     open(full_path, 'x')
+
     return full_path
 
 
 def is_tracking(hash_name, db_location):
 
     file_list = gen_file_list(db_location)
-    full_path = db_location + '/' + hash_name
+    full_path = db_location + '/trackers/' + hash_name
     for item in file_list:
         if item == full_path:
             return True
