@@ -4,6 +4,7 @@ import os
 import sys
 import stat
 import json
+import boto3
 
 import config
 import dirmonitor as dirmon
@@ -32,32 +33,13 @@ def purged_of_ignored(file_list, ignore_file):
     return file_list
 
 
-def set_state():
-    s3sync_dir = os.environ['HOME'] + '/' + '.s3sync'
-    s3sync_config = s3sync_dir + '/' + 's3sync.config'
-    s3tracker_dir = s3sync_dir + '/' + 'trackers'
-
-    homedir = os.environ['HOME']
-
-    if os.path.isdir(s3sync_dir) is False:
-        mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IEXEC
-        os.mkdir(s3sync_dir, mode)
-        os.mkdir(s3tracker_dir, mode)
-        config.write_config(s3sync_config, homedir)
-    else:
-        if os.path.isfile(s3sync_config) is False:
-            config.write_config(s3sync_config, homedir)
-
-    return s3sync_config
-
-
 def re_init(target_dir, config_obj, verbose=True):
     pass
 
 
 def path_to_tracker(target_path, config_obj):
-    tracker = config_obj.db_location + '/trackers/'
-    + s3hash.encode_path(target_path)
+    tracker = (config_obj.db_location + '/trackers/'
+               + s3hash.encode_path(target_path))
     return tracker
 
 
@@ -74,20 +56,38 @@ def update(config_obj):
     update_files = []
     trackers_dir = config_obj.db_location + '/trackers'
     tracker_list = dirmon.gen_file_list(trackers_dir)
+
     for tracker in tracker_list:
         print("Tracker -> {}".format(tracker))
         update_files.extend(update_tracker(tracker, config_obj))
 
+    if len(update_files) > 0:
+        print("[+} In que for uploading to s3 server")
+        for item in update_files:
+            print("{}".format(item))
 
-def update_tracker(tracker_path, config_obj, verbose=True):
+
+def update_tracker(tracker_path, config_obj, verbose=True, initial=False):
+    hash_db = dict()
     new_hash_db = dict()
     removed_hash_db = dict()
     changed_hash_db = dict()
     added_hash_db = dict()
     update_files = []
 
-    with open(tracker_path, 'r') as fh:
-        hash_db = json.load(fh)
+    mode = 'r' if initial is False else 'w'
+    with open(tracker_path, mode) as fh:
+        """
+        In the event the tracker is empty because the init() function
+        uses the update_tracker() function to simply fill in filepath:hash
+        data, we look for the JSONDecodeError exception in such a case
+        and allow the code the to simply update the tracker. This reduces
+        duplicate code in init() and update_tracker().
+        """
+        try:
+            hash_db = json.load(fh) if initial is False else {}
+        except(json.JSONDecodeError):
+            pass
         target_dir_decode = s3hash.decode_path(name_from_path(tracker_path))
         print("Tracker path -> {}".format(target_dir_decode))
 
@@ -96,7 +96,9 @@ def update_tracker(tracker_path, config_obj, verbose=True):
                                   ignore_file)
 
     new_hash_db = s3hash.gen_hash_db(file_list)
-    added_files = new_hash_db.keys() - hash_db.keys()
+    added_files = (new_hash_db.keys()
+                   - hash_db.keys() if initial is False else ())
+
     removed_files = hash_db.keys() - new_hash_db.keys()
 
     # files removed
@@ -137,10 +139,14 @@ def update_tracker(tracker_path, config_obj, verbose=True):
     return update_files
 
 
+def tracker_ls(config_obj):
+    pass
+
+
 def init(target_dir, config_obj, verbose=True):
     hash_db = dict()
 
-    if config.in_scope(config_obj.root_dir, target_dir) is False:
+    if config_obj.in_scope(target_dir) is False:
         sys.exit("[-] Error: Outside of ROOT_DIR ({}) scope".format(
             config_obj.root_dir))
 
@@ -151,22 +157,22 @@ def init(target_dir, config_obj, verbose=True):
         print("[+] Initiating tracking of {}".format(target_dir))
         tracker_path = dirmon.create_tracker(target_dir_encode,
                                              config_obj.db_location)
+        update_tracker(tracker_path, config_obj, True)
+    #    ignore_file = target_dir + '/' + '.s3ignore'
 
-        ignore_file = target_dir + '/' + '.s3ignore'
+    #    if os.path.exists(ignore_file):
+    #        target_dir_list = purged_of_ignored(dirmon.gen_file_list(
+    #            target_dir), ignore_file)
+    #    else:
+    #        target_dir_list = dirmon.gen_file_list(target_dir) + '/'
+    #        + '.s3ignore'
 
-        if os.path.exists(ignore_file):
-            target_dir_list = purged_of_ignored(dirmon.gen_file_list(
-                target_dir), ignore_file)
-        else:
-            target_dir_list = dirmon.gen_file_list(target_dir) + '/'
-            + '.s3ignore'
-
-        with open(tracker_path, 'w') as fh:
-            hash_db = s3hash.gen_hash_db(target_dir_list)
-            if verbose is True:
-                for k in hash_db.keys():
-                    print("[+] tracking -> {}".format(k))
-            json.dump(hash_db, fh)
+    #    with open(tracker_path, 'w') as fh:
+    #        hash_db = s3hash.gen_hash_db(target_dir_list)
+    #        if verbose is True:
+    #            for k in hash_db.keys():
+    #                print("[+] tracking -> {}".format(k))
+    #       json.dump(hash_db, fh)
         return
 
 
@@ -180,26 +186,29 @@ def usage():
 
 
 def main():
-    opt_init_dir = None
     if len(sys.argv) < 2:
         usage()
         sys.exit()
 
-    s3sync_config = set_state()
-    config_obj = config.Parse(s3sync_config)
+
+#    s3sync_config = set_state()
+#    config_obj = Config().set_state()
+#    s3sync_config = set_state()
+
+    s3sync_config = config.set_state()
+    config_obj = config.ParseConfig(s3sync_config)
 
     if sys.argv[1] == 'init':
-        if len(sys.argv) > 2:
-            opt_init_dir = sys.argv[2]
-        else:
-            opt_init_dir = os.getcwd()
-
+        opt_init_dir = sys.argv[2] if len(sys.argv) > 2 else os.getcwd()
         init(opt_init_dir, config_obj)
 
     if sys.argv[1] == 'update':
         update(config_obj)
 
     if sys.argv[1] == 'tracker' and sys.argv[2] == 'ls':
+        pass
+
+    if sys.argv[1] == 'tracker' and sys.argv[2] == 'rm':
         pass
 
 
