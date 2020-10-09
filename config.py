@@ -24,6 +24,8 @@ class ParseConfig:
             sys.exit("Error: config file -> {} no DB_LOCATION specified".
                      format(config_file))
 
+        self.trackers_dir = self.db_location + '/trackers'
+
     def in_scope(self, target_dir):
         self.target_dir = target_dir
         if(os.path.commonpath([self.root_dir, self.target_dir])

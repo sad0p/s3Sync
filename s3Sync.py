@@ -38,7 +38,7 @@ def re_init(target_dir, config_obj, verbose=True):
 
 
 def path_to_tracker(target_path, config_obj):
-    tracker = (config_obj.db_location + '/trackers/'
+    tracker = (config_obj.tracker_dir
                + s3hash.encode_path(target_path))
     return tracker
 
@@ -54,12 +54,12 @@ def name_from_path(path):
 
 def update(config_obj):
     update_files = []
-    trackers_dir = config_obj.db_location + '/trackers'
+    trackers_dir = config_obj.trackers_dir
     tracker_list = dirmon.gen_file_list(trackers_dir)
 
     for tracker in tracker_list:
         print("Tracker -> {}".format(tracker))
-        update_files.extend(update_tracker(tracker, config_obj))
+        update_files.extend(update_tracker(tracker))
 
     if len(update_files) > 0:
         print("[+} In que for uploading to s3 server")
@@ -67,7 +67,7 @@ def update(config_obj):
             print("{}".format(item))
 
 
-def update_tracker(tracker_path, config_obj, verbose=True, initial=False):
+def update_tracker(tracker_path, verbose=True, initial=False):
     hash_db = dict()
     new_hash_db = dict()
     removed_hash_db = dict()
@@ -140,6 +140,7 @@ def update_tracker(tracker_path, config_obj, verbose=True, initial=False):
 
 
 def tracker_ls(config_obj):
+    print("Tracker\t\tAssociate Object\tCreated\tModified\tRemote-Sync")
     pass
 
 
