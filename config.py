@@ -19,14 +19,16 @@ class ParseConfig:
         if self.root_dir is None:
             sys.exit("Error: config file -> {} no ROOT_DIR specified".format(
                 config_file))
-            
+
         if self.db_location is None:
-            sys.exit("Error: config file -> {} no DB_LOCATION specified".format(
-                config_file))
-        
+            sys.exit("Error: config file -> {} no DB_LOCATION specified".
+                     format(config_file))
+
     def in_scope(self, target_dir):
         self.target_dir = target_dir
-        if os.path.commonpath([self.root_dir, self.target_dir]) != self.root_dir:
+        if(os.path.commonpath([self.root_dir, self.target_dir])
+           != self.root_dir):
+
             return False
         else:
             return True

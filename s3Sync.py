@@ -206,7 +206,7 @@ def main():
         update(config_obj)
 
     if sys.argv[1] == 'tracker' and sys.argv[2] == 'ls':
-        pass
+        tracker_ls(config_obj)
 
     if sys.argv[1] == 'tracker' and sys.argv[2] == 'rm':
         pass
