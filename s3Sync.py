@@ -13,6 +13,10 @@ import s3hash
 
 def purged_of_ignored(file_list, ignore_file):
     remove_items = []
+
+    if os.path.isfile(ignore_file) is False:
+        return file_list
+
     with open(ignore_file, 'r') as fh:
         purge_items = [x.strip('\n') for x in fh.readlines()]
 
