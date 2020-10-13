@@ -5,6 +5,7 @@ import sys
 import stat
 import json
 import boto3
+import itertools
 
 import config
 import dirmonitor as dirmon
@@ -35,10 +36,6 @@ def purged_of_ignored(file_list, ignore_file):
         for rm_item in remove_items:
             del file_list[file_list.index(rm_item)]
     return file_list
-
-
-def re_init(target_dir, config_obj, verbose=True):
-    pass
 
 
 def path_to_tracker(target_path, config_obj):
@@ -144,7 +141,20 @@ def update_tracker(tracker_path, verbose=True, initial=False):
 
 
 def tracker_ls(config_obj):
-    print("Tracker\t\tAssociate Object\tCreated\tModified\tRemote-Sync")
+    tracker_list_encoded = dirmon.gen_file_list(config_obj.trackers_dir)
+
+    for i, v in enumerate(tracker_list_encoded):
+        tracker_list_encoded[i] = name_from_path(v)
+
+    tracker_list_decoded = [s3hash.decode_path(x)
+                            for x in tracker_list_encoded]
+
+    print('{:<50}{:<50}{:<20}{:<20}{:<20}'.format("Tracker", "Associated",
+                                                  "Created", "modified",
+                                                  "Remote-Sync"))
+
+    for (e, d) in zip(tracker_list_encoded, tracker_list_decoded):
+        print('{:<50}{:<30}'.format(e, d))
     pass
 
 
@@ -163,21 +173,6 @@ def init(target_dir, config_obj, verbose=True):
         tracker_path = dirmon.create_tracker(target_dir_encode,
                                              config_obj.db_location)
         update_tracker(tracker_path, config_obj, True)
-    #    ignore_file = target_dir + '/' + '.s3ignore'
-
-    #    if os.path.exists(ignore_file):
-    #        target_dir_list = purged_of_ignored(dirmon.gen_file_list(
-    #            target_dir), ignore_file)
-    #    else:
-    #        target_dir_list = dirmon.gen_file_list(target_dir) + '/'
-    #        + '.s3ignore'
-
-    #    with open(tracker_path, 'w') as fh:
-    #        hash_db = s3hash.gen_hash_db(target_dir_list)
-    #        if verbose is True:
-    #            for k in hash_db.keys():
-    #                print("[+] tracking -> {}".format(k))
-    #       json.dump(hash_db, fh)
         return
 
 
@@ -194,11 +189,6 @@ def main():
     if len(sys.argv) < 2:
         usage()
         sys.exit()
-
-
-#    s3sync_config = set_state()
-#    config_obj = Config().set_state()
-#    s3sync_config = set_state()
 
     s3sync_config = config.set_state()
     config_obj = config.ParseConfig(s3sync_config)
