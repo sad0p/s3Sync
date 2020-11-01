@@ -14,15 +14,18 @@ def gen_file_list(root_dir):
 
 
 def create_tracker(hash_name, db_location):
+    tracker_path = f'{db_location}/trackers/{hash_name}'
+    open(tracker_path, 'x')
+    return tracker_path
 
-    full_path = db_location + '/trackers/' + hash_name
-    open(full_path, 'x')
 
-    return full_path
+def create_tracker_object(hash_name, db_location):
+    tracker_object_path = f'{db_location}/objects/{hash_name}'
+    open(tracker_object_path, 'x')
+    return tracker_object_path
 
 
 def is_tracking(hash_name, db_location):
-
     file_list = gen_file_list(db_location)
     full_path = db_location + '/trackers/' + hash_name
     for item in file_list:

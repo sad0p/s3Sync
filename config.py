@@ -45,7 +45,7 @@ def write_config(s3sync_config, home_dir):
         'to detect changes in order to initiate uploads.\n' \
         '#The variable \'DB_LOCATION\' specifies the directory where this \
         information will be stored.\n\n' \
-        'DB_LOCATION={}\n'.format(home_dir + '/s3syc_backupdir',
+        'DB_LOCATION={}\n'.format(home_dir + '/s3sync_backupdir',
                                   home_dir + '/.s3sync')
     with open(s3sync_config, 'w') as fh:
         fh.write(default_config)

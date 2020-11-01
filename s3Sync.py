@@ -4,12 +4,15 @@ import os
 import sys
 import stat
 import json
+import time
 import boto3
 import itertools
+
 
 import config
 import dirmonitor as dirmon
 import s3hash
+import s3object
 
 
 def purged_of_ignored(file_list, ignore_file):
@@ -66,6 +69,11 @@ def update(config_obj):
         print("[+} In que for uploading to s3 server")
         for item in update_files:
             print("{}".format(item))
+
+
+def update_tracker_object(tracker_object_path, tracker_object_meta_data):
+    with open(tracker_object_path, 'w') as fh:
+        json.dump(tracker_object_meta_data.__dict__, fh)
 
 
 def update_tracker(tracker_path, verbose=True, initial=False):
@@ -172,7 +180,21 @@ def init(target_dir, config_obj, verbose=True):
         print("[+] Initiating tracking of {}".format(target_dir))
         tracker_path = dirmon.create_tracker(target_dir_encode,
                                              config_obj.db_location)
+
         update_tracker(tracker_path, config_obj, True)
+
+        tracker_object_path = dirmon.create_tracker_object(
+                              target_dir_encode, config_obj.db_location)
+
+        tracker_object_time = {
+                               'created': time.strftime("%m/%d/%Y, %H:%M:%S"),
+                               'modified': time.strftime("%m/%d/%Y, %H:%M:%S"),
+                               'sync_status': 'in-que'
+                              }
+
+        tracker_object_meta_data = s3object.TrackerObject(
+                                   **tracker_object_time)
+        update_tracker_object(tracker_object_path, tracker_object_meta_data)
         return
 
 
