@@ -148,6 +148,13 @@ def update_tracker(tracker_path, verbose=True, initial=False):
     return update_files
 
 
+def tracker_rm(config_obj, tracker):
+    tracker_object_path = f'{config_obj.db_location}/objects/{tracker}'
+    tracker_path = f'{config_obj.db_location}/objects/{tracker}'
+    os.remove(tracker_object_path)
+    os.remove(tracker_path)
+
+
 def tracker_ls(config_obj):
     tracker_list_encoded = dirmon.gen_file_list(config_obj.trackers_dir)
 
@@ -157,13 +164,15 @@ def tracker_ls(config_obj):
     tracker_list_decoded = [s3hash.decode_path(x)
                             for x in tracker_list_encoded]
 
-    print('{:<50}{:<50}{:<20}{:<20}{:<20}'.format("Tracker", "Associated",
-                                                  "Created", "modified",
-                                                  "Remote-Sync"))
-
     for (e, d) in zip(tracker_list_encoded, tracker_list_decoded):
-        print('{:<50}{:<30}'.format(e, d))
-    pass
+        associated_object = f'{config_obj.db_location}/objects/{e}'
+        with open(associated_object, 'r') as fh:
+            tracker_object_meta_data = s3object.TrackerObject(**json.load(fh))
+
+        print(f'Tracker: {e}\nAssociated-With: {d}\n'
+              f'Created:{tracker_object_meta_data.created}\n'
+              f'Modified: {tracker_object_meta_data.modified}\n'
+              f'Remote-Sync: {tracker_object_meta_data.sync_status}\n')
 
 
 def init(target_dir, config_obj, verbose=True):
@@ -226,7 +235,11 @@ def main():
         tracker_ls(config_obj)
 
     if sys.argv[1] == 'tracker' and sys.argv[2] == 'rm':
-        pass
+        if len(sys.argv) < 5:
+            tracker_rm(config_obj, sys.argv[3])
+        else:
+            sys.exit("supply tracker:"
+                     f"{sys.argv[0]} tracker rm [tracker] (without brackets)")
 
 
 if __name__ == '__main__':
