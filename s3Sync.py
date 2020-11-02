@@ -150,7 +150,7 @@ def update_tracker(tracker_path, verbose=True, initial=False):
 
 def tracker_rm(config_obj, tracker):
     tracker_object_path = f'{config_obj.db_location}/objects/{tracker}'
-    tracker_path = f'{config_obj.db_location}/objects/{tracker}'
+    tracker_path = f'{config_obj.db_location}/trackers/{tracker}'
     os.remove(tracker_object_path)
     os.remove(tracker_path)
 
@@ -179,12 +179,14 @@ def init(target_dir, config_obj, verbose=True):
     hash_db = dict()
 
     if config_obj.in_scope(target_dir) is False:
-        sys.exit("[-] Error: Outside of ROOT_DIR ({}) scope".format(
-            config_obj.root_dir))
+        sys.exit(f"[-] Error: Outside of ROOT_DIR ({config_obj.root_dir})")
+
+    if not os.path.exists(target_dir):
+        sys.exit(f"[-] Error: {target_dir} does not exist")
 
     target_dir_encode = s3hash.encode_path(target_dir)
     if dirmon.is_tracking(target_dir_encode, config_obj.db_location) is True:
-        sys.exit("[-] Error: {} is already being tracked".format(target_dir))
+        sys.exit(f"[-] Error: {target_dir} is already being tracked")
     else:
         print("[+] Initiating tracking of {}".format(target_dir))
         tracker_path = dirmon.create_tracker(target_dir_encode,

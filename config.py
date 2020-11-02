@@ -40,13 +40,13 @@ def write_config(s3sync_config, home_dir):
     default_config = '#ROOT_DIR -  This field ensure s3sync can\'t \
         perform backup actions above a giving directory.\n' \
         '#SET to \'/\' (without quotes) for system wide backup privs.\n\n'\
-        'ROOT_DIR={}\n\n' \
+        f'ROOT_DIR={home_dir}\n\n' \
         '#s3sync will need a location to store file state information to' \
         'to detect changes in order to initiate uploads.\n' \
         '#The variable \'DB_LOCATION\' specifies the directory where this \
         information will be stored.\n\n' \
-        'DB_LOCATION={}\n'.format(home_dir + '/s3sync_backupdir',
-                                  home_dir + '/.s3sync')
+        f'DB_LOCATION={home_dir}/.s3sync\n'
+
     with open(s3sync_config, 'w') as fh:
         fh.write(default_config)
         return
