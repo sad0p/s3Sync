@@ -58,17 +58,44 @@ def name_from_path(path):
 
 def update(config_obj):
     update_files = []
+    update_tracker_object_list = []
     trackers_dir = config_obj.trackers_dir
     tracker_list = dirmon.gen_file_list(trackers_dir)
 
     for tracker in tracker_list:
         print("Tracker -> {}".format(tracker))
-        update_files.extend(update_tracker(tracker))
+        files_in_tracker = update_tracker(tracker)
+
+        if len(files_in_tracker) > 0:
+            update_tracker_object_list.append(tracker)
+
+        update_files.extend(files_in_tracker)
 
     if len(update_files) > 0:
         print("[+} In que for uploading to s3 server")
         for item in update_files:
             print("{}".format(item))
+
+        for item in update_tracker_object_list:
+            tracker_oject_name = os.path.basename(item)
+            tracker_object_dir = os.path.join(config_obj.db_location,
+                                              'objects')
+
+            tracker_object_path = os.path.join(tracker_object_dir,
+                                               tracker_oject_name)
+
+            with open(tracker_object_path, 'r') as fh:
+                tracker_object_meta_data = s3object.TrackerObject(
+                                            **json.load(fh))
+
+            os.remove(tracker_object_path)
+
+            tracker_object_meta_data.modified = time.strftime(
+                                                     "%m/%d/%Y, %H:%M:%S")
+
+            tracker_object_meta_data.sync_status = 'in-que'
+            update_tracker_object(tracker_object_path,
+                                  tracker_object_meta_data)
 
 
 def update_tracker_object(tracker_object_path, tracker_object_meta_data):
