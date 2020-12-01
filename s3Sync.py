@@ -5,14 +5,19 @@ import sys
 import stat
 import json
 import time
-import boto3
 import itertools
-
-
 import config
-import dirmonitor as dirmon
 import s3hash
 import s3object
+import dirmonitor as dirmon
+
+
+def que_files(file_list, tracker, config_obj):
+    qued_tracker_name = os.path.basename(tracker)
+    qued_tracker_dir = os.path.join(config_obj.db_location, 'ques')
+    qued_tracker_path = os.path.join(qued_tracker_dir, qued_tracker_name)
+    with open(qued_tracker_path, 'w') as fh:
+        json.dump(file_list, fh)
 
 
 def purged_of_ignored(file_list, ignore_file):
@@ -47,15 +52,6 @@ def path_to_tracker(target_path, config_obj):
     return tracker
 
 
-def name_from_path(path):
-    count = 0
-    new_path = path.rstrip('/')
-    for i, c in enumerate(new_path):
-        if c == '/':
-            count = i
-    return new_path[count + 1:]
-
-
 def update(config_obj):
     update_files = []
     update_tracker_object_list = []
@@ -63,18 +59,18 @@ def update(config_obj):
     tracker_list = dirmon.gen_file_list(trackers_dir)
 
     for tracker in tracker_list:
-        print("Tracker -> {}".format(tracker))
+        print(f"Tracker -> {tracker}")
         files_in_tracker = update_tracker(tracker)
 
         if len(files_in_tracker) > 0:
             update_tracker_object_list.append(tracker)
-
-        update_files.extend(files_in_tracker)
+            que_files(files_in_tracker, tracker, config_obj)
+            update_files.extend(files_in_tracker)
 
     if len(update_files) > 0:
-        print("[+} In que for uploading to s3 server")
+        print("[+] In que for uploading to s3 server")
         for item in update_files:
-            print("{}".format(item))
+            print(f"{item}")
 
         for item in update_tracker_object_list:
             tracker_oject_name = os.path.basename(item)
@@ -103,7 +99,7 @@ def update_tracker_object(tracker_object_path, tracker_object_meta_data):
         json.dump(tracker_object_meta_data.__dict__, fh)
 
 
-def update_tracker(tracker_path, verbose=True, initial=False):
+def update_tracker(tracker_path, config_obj=None, initial=False):
     hash_db = dict()
     new_hash_db = dict()
     removed_hash_db = dict()
@@ -117,17 +113,17 @@ def update_tracker(tracker_path, verbose=True, initial=False):
         In the event the tracker is empty because the init() function
         uses the update_tracker() function to simply fill in filepath:hash
         data, we look for the JSONDecodeError exception in such a case
-        and allow the code the to simply update the tracker. This reduces
+        and allow the code to simply update the tracker. This reduces
         duplicate code in init() and update_tracker().
         """
         try:
             hash_db = json.load(fh) if initial is False else {}
         except(json.JSONDecodeError):
             pass
-        target_dir_decode = s3hash.decode_path(name_from_path(tracker_path))
-        print("Tracker path -> {}".format(target_dir_decode))
+        target_dir_decode = s3hash.decode_path(os.path.basename(tracker_path))
+        print(f"Tracker path -> {target_dir_decode}")
 
-    ignore_file = target_dir_decode + '/' + '.s3ignore'
+    ignore_file = os.path.join(target_dir_decode, '.s3ignore')
     file_list = purged_of_ignored(dirmon.gen_file_list(target_dir_decode),
                                   ignore_file)
 
@@ -136,6 +132,9 @@ def update_tracker(tracker_path, verbose=True, initial=False):
                    - hash_db.keys() if initial is False else ())
 
     removed_files = hash_db.keys() - new_hash_db.keys()
+
+    if initial is True:
+        que_files(file_list, tracker_path, config_obj)
 
     # files removed
     if len(removed_files) > 0:
@@ -186,7 +185,7 @@ def tracker_ls(config_obj):
     tracker_list_encoded = dirmon.gen_file_list(config_obj.trackers_dir)
 
     for i, v in enumerate(tracker_list_encoded):
-        tracker_list_encoded[i] = name_from_path(v)
+        tracker_list_encoded[i] = os.path.basename(v)
 
     tracker_list_decoded = [s3hash.decode_path(x)
                             for x in tracker_list_encoded]
@@ -219,7 +218,7 @@ def init(target_dir, config_obj, verbose=True):
         tracker_path = dirmon.create_tracker(target_dir_encode,
                                              config_obj.db_location)
 
-        update_tracker(tracker_path, config_obj, True)
+        update_tracker(tracker_path, config_obj, initial=True)
 
         tracker_object_path = dirmon.create_tracker_object(
                               target_dir_encode, config_obj.db_location)
@@ -237,7 +236,7 @@ def init(target_dir, config_obj, verbose=True):
 
 
 def usage():
-    print("{} [command] [subcommands]\n".format(sys.argv[0]))
+    print(f"{sys.argv[0]} [command] [subcommands]\n")
     print("List of Commands:\n")
     print("init    --- start tracking and backing up files in current "
           "directory")

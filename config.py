@@ -17,14 +17,12 @@ class ParseConfig:
                         self.db_location = value
 
         if self.root_dir is None:
-            sys.exit("Error: config file -> {} no ROOT_DIR specified".format(
-                config_file))
+            sys.exit(f"Error: config file -> {config_file} no ROOT_DIR")
 
         if self.db_location is None:
-            sys.exit("Error: config file -> {} no DB_LOCATION specified".
-                     format(config_file))
+            sys.exit(f"Error: config file -> {config_file} no DB_LOCATION")
 
-        self.trackers_dir = self.db_location + '/trackers'
+        self.trackers_dir = os.path.join(self.db_location, 'trackers')
 
     def in_scope(self, target_dir):
         self.target_dir = target_dir
@@ -54,16 +52,18 @@ def write_config(s3sync_config, home_dir):
 
 def set_state():
     home_dir = os.environ['HOME']
-    s3sync_dir = os.environ['HOME'] + '/' + '.s3sync'
-    s3sync_config = home_dir + '/.s3sync/s3sync.config'
-    s3tracker_dir = s3sync_dir + '/trackers'
-    s3tracker_obj = s3sync_dir + '/objects'
+    s3sync_dir = os.path.join(home_dir, '.s3sync')
+    s3sync_config = os.path.join(s3sync_dir, 's3sync.config')
+    s3tracker_dir = os.path.join(s3sync_dir, 'trackers')
+    s3tracker_obj = os.path.join(s3sync_dir, 'objects')
+    s3tracker_ques = os.path.join(s3sync_dir, 'ques')
 
     if os.path.isdir(s3sync_dir) is False:
         mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IEXEC
         os.mkdir(s3sync_dir, mode)
         os.mkdir(s3tracker_dir, mode)
         os.mkdir(s3tracker_obj, mode)
+        os.mkdir(s3tracker_ques, mode)
         write_config(s3sync_config, home_dir)
     else:
         if os.path.isfile(s3sync_config) is False:
