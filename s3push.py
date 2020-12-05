@@ -26,7 +26,7 @@ def get_file_list(que_file):
 
 
 def get_bucket_name():
-    config_obj = config.ParseConfig('/home/sad0p/.s3sync/s3sync.config')
+    config_obj = config.ParseConfig()
     return config_obj.bucket_name
 
 

@@ -2,32 +2,40 @@ import os
 import stat
 import s3hash
 
+
 class ParseConfig:
-    def __init__(self, config_file):
+    def __init__(self, config_file=None):
         self.root_dir = None
         self.db_location = None
         self.bucket_name = None
+        self.config_file = config_file
 
-        with open(config_file, 'r') as fh:
-            for line in fh:
-                if line[0] != '#' and line[0] != '\n':
-                    line = line.replace(' ', '').replace('\n', '')
-                    variable, value = line.split('=')
-                    if variable == 'ROOT_DIR':
-                        self.root_dir = value
-                    if variable == 'DB_LOCATION':
-                        self.db_location = value
-                    if variable == 'BUCKET_NAME':
-                        self.bucket_name = value
+        if self.config_file is None:
+            self.home_dir = os.getenv('HOME')
+            self.config_file = os.path.join(
+                                self.home_dir, '.s3sync/s3sync.config')
+
+        with open(self.config_file, 'r') as self.fh:
+            for self.line in self.fh:
+                if self.line[0] != '#' and self.line[0] != '\n':
+                    self.line = self.line.replace(' ', '').replace('\n', '')
+                    self.variable, self.value = self.line.split('=')
+                    if self.variable == 'ROOT_DIR':
+                        self.root_dir = self.value
+                    if self.variable == 'DB_LOCATION':
+                        self.db_location = self.value
+                    if self.variable == 'BUCKET_NAME':
+                        self.bucket_name = self.value
 
         if self.root_dir is None:
-            sys.exit(f"Error: config file -> {config_file} no ROOT_DIR")
+            sys.exit(f"Error: config file -> {self.config_file} no ROOT_DIR")
 
         if self.db_location is None:
-            sys.exit(f"Error: config file -> {config_file} no DB_LOCATION")
+            sys.exit(
+             f"Error: config file -> {self.config_file} no DB_LOCATION")
 
         if self.bucket_name is None or self.bucket_name == '':
-            self.user =  os.getenv("USER")
+            self.user = os.getenv("USER")
             self.bucket_name = f's3sync-{s3hash.encode_path(self.user)}'
         self.trackers_dir = os.path.join(self.db_location, 'trackers')
 
