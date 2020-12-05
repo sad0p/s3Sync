@@ -2,7 +2,6 @@ import os
 import sys
 import json
 import boto3
-import binascii
 from botocore.exceptions import ClientError
 import s3hash
 import config
@@ -13,7 +12,6 @@ def get_que_list(que_dir):
     que = dict()
     que_list = dirmon.gen_file_list(que_dir)
     for item in que_list:
-        # s3hash.decode_path(os.path.basename(item))
         que[item] = get_file_list(item)
     return que
 
@@ -41,10 +39,8 @@ def bucket_exist(bucket_name, s3_object):
 def upload(bucket_name, file_path, s3_object):
     if bucket_exist(bucket_name, s3_object) is False:
         make_bucket(bucket_name, s3_object)
-
-    file_name = os.path.basename(file_path)
     try:
-        response = s3_object.upload_file(file_path, bucket_name, file_name)
+        response = s3_object.upload_file(file_path, bucket_name, file_path)
     except ClientError:
         print(f"Failed to upload to {file_path} to {bucket_name}")
 
@@ -59,9 +55,9 @@ def make_bucket(bucket_name, s3_object):
 if __name__ == '__main__':
     s3_object = boto3.client('s3')
     ques = get_que_list('/home/sad0p/.s3sync/ques')
+    bucket_name = config.ParseConfig().bucket_name
+
     for item in ques:
-        bucket_name = (s3hash.decode_path(
-                        os.path.basename(item)).replace('/', '-')[1:].replace('_', '.'))
         file_list = ques[item]
         for f in file_list:
             upload(bucket_name, f, s3_object)
