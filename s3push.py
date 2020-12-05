@@ -1,6 +1,7 @@
 import os
 import json
 import boto3
+from botocore.exceptions import ClientError
 import s3hash
 import config
 import dirmonitor as dirmon
@@ -26,5 +27,30 @@ def get_bucket_name():
     config_obj = config.ParseConfig('/home/sad0p/.s3sync/s3sync.config')
     return config_obj.bucket_name
 
+def bucket_exist(bucket_name, s3_object):
+    bucket_list = s3_object.list_buckets()['Buckets']
+    for bucket in bucket_list:
+        if bucket['Name'] == bucket_name:
+            return True
+    return False
+
+def upload(bucket_name, file_path, s3_object):
+    if bucket_exist(bucket_name, s3_object) is False:
+        make_bucket(bucket_name, s3_object)
+    
+    file_name = os.path.basename(file_path)
+    try:
+        response = s3_object.upload_file(file_path, bucket_name, file_name)
+    except ClientError:
+        print(f"Failed to upload to {file_path} to {bucket_name}")
+    print(response)
+
+def make_bucket(bucket_name, s3_object):
+        try:
+            s3_object.create_bucket(Bucket=bucket_name)
+        except ClientError:
+            print(f"Error creating bucket {bucket_name}")
+
 if __name__ == '__main__':
-    print(get_bucket_name())
+    s3_object = boto3.client('s3')
+    upload('blah-sad0p','/tmp/tesfile', s3_object)
