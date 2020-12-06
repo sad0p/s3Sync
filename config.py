@@ -69,17 +69,15 @@ def write_config(s3sync_config, home_dir):
 def set_state():
     home_dir = os.environ['HOME']
     s3sync_dir = os.path.join(home_dir, '.s3sync')
-    s3sync_config = os.path.join(s3sync_dir, 's3sync.config')
-    s3tracker_dir = os.path.join(s3sync_dir, 'trackers')
-    s3tracker_obj = os.path.join(s3sync_dir, 'objects')
-    s3tracker_ques = os.path.join(s3sync_dir, 'ques')
+    s3sync_sub_dirs_name = ['trackers', 'objects', 'ques']
 
+    s3sync_config = os.path.join(s3sync_dir, 's3sync.config')
     if os.path.isdir(s3sync_dir) is False:
         mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IEXEC
         os.mkdir(s3sync_dir, mode)
-        os.mkdir(s3tracker_dir, mode)
-        os.mkdir(s3tracker_obj, mode)
-        os.mkdir(s3tracker_ques, mode)
+
+        for item in s3sync_sub_dirs_name:
+            os.mkdir(os.path.join(s3sync_dir, item), mode)
         write_config(s3sync_config, home_dir)
     else:
         if os.path.isfile(s3sync_config) is False:
