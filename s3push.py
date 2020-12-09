@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import boto3
+
 from botocore.exceptions import ClientError
 import s3hash
 import config
@@ -54,10 +55,10 @@ def make_bucket(bucket_name, s3_object):
 
 if __name__ == '__main__':
     s3_object = boto3.client('s3')
-    ques = get_que_list('/home/sad0p/.s3sync/ques')
-    bucket_name = config.ParseConfig().bucket_name
+    config_obj = config.ParseConfig()
+    ques = get_que_list(config_obj.ques_dir)
 
     for item in ques:
         file_list = ques[item]
         for f in file_list:
-            upload(bucket_name, f, s3_object)
+            upload(config_obj.bucket_name, f, s3_object)
