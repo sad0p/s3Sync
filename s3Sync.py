@@ -244,7 +244,7 @@ def usage():
           "and pushes additions or file modifications to s3")
 
 
-def main():
+def main(): 
     if len(sys.argv) < 2:
         usage()
         sys.exit()

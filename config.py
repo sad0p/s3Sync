@@ -36,8 +36,9 @@ class ParseConfig:
 
         if self.bucket_name is None or self.bucket_name == '':
             self.user = os.getenv("USER")
-            self.bucket_name = f's3sync-{s3hash.encode_path(self.user).replace('==', '')}'
+            self.bucket_name = f's3sync-{self.user}'
         self.trackers_dir = os.path.join(self.db_location, 'trackers')
+        self.push_log_path = os.path.join(self.db_location, 'push.log')
 
     def in_scope(self, target_dir):
         self.target_dir = target_dir
