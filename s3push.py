@@ -7,6 +7,8 @@ from botocore.exceptions import ClientError
 import s3hash
 import config
 import dirmonitor as dirmon
+import s3object
+import s3Sync
 
 
 def get_que_list(que_dir):
@@ -22,6 +24,24 @@ def get_file_list(que_file):
     with open(que_file, 'r') as fh:
         file_list = json.load(fh)
     return file_list
+
+
+"""
+    Duplicate code. See s3Sync.py
+"""
+
+
+def update_que(que_path, config_obj):
+    tracker_object_dir = os.path.join(config_obj.db_location, 'objects')
+    tracker_object_path = os.path.join(tracker_object_dir,
+                                       os.path.basename(que_path))
+
+    with open(tracker_object_path, 'r') as fh:
+        tracker_object_meta_data = s3object.TrackerObject(**json.load(fh))
+        os.remove(que_path)
+        tracker_object_meta_data.sync_status = 'sync'
+        s3Sync.update_tracker_object(tracker_object_path,
+                                     tracker_object_meta_data)
 
 
 def get_bucket_name():
@@ -46,7 +66,7 @@ def upload(bucket_name, file_path, s3_object, logger):
     except ClientError:
         logger.fatal(f"Failed to upload to {file_path} to {bucket_name}")
         sys.exit(1)
-    logger.info(f"Uploaded {file_path} to bucket {bucket_name}")    
+    logger.info(f"Uploaded {file_path} to bucket {bucket_name}")
 
 
 def make_bucket(bucket_name, s3_object, logger):
@@ -80,6 +100,7 @@ def run():
         file_list = ques[item]
         for f in file_list:
             upload(config_obj.bucket_name, f, s3_object, logger)
+        update_que(item, config_obj)
 
 
 if __name__ == '__main__':
