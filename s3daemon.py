@@ -1,36 +1,46 @@
 import os
 import sys
+import time
 import config
 import ctypes
 import signal
-import logging
-
+import s3logger
+import s3Sync
+import s3push
 
 class S3Daemon():
     def __init__(self, config):
         self.INTERVAL = 10.0
         self.pid_file = os.path.join(config.db_location, 's3daemon.pid')
+        self.logger = s3logger.create_logger(config.daemon_log_path)
 
     def start(self):
         if self.is_running() is True:
-            sys.exit(f"Daemon is running. Pidfile ({self.pid_file}) present.")
+            self.logger.warning(
+                f"Daemon is running. Pidfile ({self.pid_file}) present.")
+            sys.exit(1)
 
         if ctypes.CDLL(None).daemon(0, 0) < 0:
-            sys.exit(f"Failed to daemonize")
+            self.logger.warning(f"Failed to daemonize")
+            sys.exit(1)
 
         self.pid = os.getpid()
         with open(self.pid_file, 'w') as self.fh:
             self.fh.write(f'{self.pid}')
-
+        self.logger.info("started daemonization")
         self.run()
 
     def stop(self):
-        if self.is_running is False:
-            sys.exit(
+        if self.is_running() is False:
+            self.logger.warning(
              f"Daemon is not running. Pidfile ({self.pid_file}) not present")
+            sys.exit(1)
 
         with open(self.pid_file, 'r') as self.fh:
             self.pid = int(self.fh.read())
+
+        self.logger.info(
+            f"Terminating daemon with pid {self.pid} in {self.pid_file}")
 
         os.kill(self.pid, signal.SIGTERM)
         os.remove(self.pid_file)
@@ -39,7 +49,15 @@ class S3Daemon():
         return os.path.isfile(self.pid_file)
 
     def run(self):
-        signal.pause()
+        signal.signal(signal.SIGTERM, self.stop)
+        while True:
+            time.sleep(self.INTERVAL)
+            self.logger.info("checking for updates")
+            if s3Sync.update(self.config_obj) is True:
+                self.logger.info("Updates present")
+                s3push.run()
+            else:
+                self.logger.info("No updates present at this time")
 
 
 def usage():

@@ -9,11 +9,12 @@ class ParseConfig:
         self.db_location = None
         self.bucket_name = None
         self.config_file = config_file
+        self.home_dir = os.getenv('HOME')
 
         if self.config_file is None:
-            self.home_dir = os.getenv('HOME')
             self.config_file = os.path.join(
                                 self.home_dir, '.s3sync/s3sync.config')
+
         self.ques_dir = os.path.join(self.home_dir, '.s3sync/ques')
         with open(self.config_file, 'r') as self.fh:
             for self.line in self.fh:
@@ -39,6 +40,7 @@ class ParseConfig:
             self.bucket_name = f's3sync-{self.user}'
         self.trackers_dir = os.path.join(self.db_location, 'trackers')
         self.push_log_path = os.path.join(self.db_location, 'push.log')
+        self.daemon_log_path = os.path.join(self.db_location, 'daemon.log')
 
     def in_scope(self, target_dir):
         self.target_dir = target_dir

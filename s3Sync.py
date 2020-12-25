@@ -92,6 +92,8 @@ def update(config_obj):
             tracker_object_meta_data.sync_status = 'in-que'
             update_tracker_object(tracker_object_path,
                                   tracker_object_meta_data)
+        return True
+    return False
 
 
 def update_tracker_object(tracker_object_path, tracker_object_meta_data):
@@ -257,7 +259,7 @@ def main():
         init(opt_init_dir, config_obj)
 
     if sys.argv[1] == 'update':
-        update(config_obj)
+        return update(config_obj)
 
     if sys.argv[1] == 'tracker' and sys.argv[2] == 'ls':
         tracker_ls(config_obj)

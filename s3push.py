@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-import logging
 import boto3
 from botocore.exceptions import ClientError
 import s3hash
@@ -9,6 +8,7 @@ import config
 import dirmonitor as dirmon
 import s3object
 import s3Sync
+import s3logger
 
 
 def get_que_list(que_dir):
@@ -77,22 +77,10 @@ def make_bucket(bucket_name, s3_object, logger):
         sys.exit(1)
 
 
-def create_logger(push_log_path):
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    fh_logger = logging.FileHandler(push_log_path)
-    logger_formatter = logging.Formatter(
-        '%(levelname)s:%(asctime)s:%(funcName)s:%(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p')
-    fh_logger.setFormatter(logger_formatter)
-    logger.addHandler(fh_logger)
-    return logger
-
-
 def run():
     s3_object = boto3.client('s3')
     config_obj = config.ParseConfig()
-    logger = create_logger(config_obj.push_log_path)
+    logger = s3logger.create_logger(config_obj.push_log_path)
 
     ques = get_que_list(config_obj.ques_dir)
 
