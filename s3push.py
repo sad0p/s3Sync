@@ -40,7 +40,7 @@ def update_que(que_path, config_obj):
         tracker_object_meta_data = s3object.TrackerObject(**json.load(fh))
         os.remove(que_path)
         tracker_object_meta_data.sync_status = 'sync'
-        s3Sync.update_tracker_object(tracker_object_path,
+        s3sync.update_tracker_object(tracker_object_path,
                                      tracker_object_meta_data)
 
 

@@ -5,8 +5,9 @@ import config
 import ctypes
 import signal
 import s3logger
-import s3Sync
+import s3sync
 import s3push
+
 
 class S3Daemon():
     def __init__(self, config):
@@ -53,7 +54,7 @@ class S3Daemon():
         while True:
             time.sleep(self.INTERVAL)
             self.logger.info("checking for updates")
-            if s3Sync.update(self.config_obj) is True:
+            if s3sync.update(self.config_obj) is True:
                 self.logger.info("Updates present")
                 s3push.run()
             else:
