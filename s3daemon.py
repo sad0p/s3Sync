@@ -14,6 +14,7 @@ class S3Daemon():
         self.INTERVAL = 10.0
         self.pid_file = os.path.join(config.db_location, 's3daemon.pid')
         self.logger = s3logger.create_logger(config.daemon_log_path)
+        self.config_obj = config
 
     def start(self):
         if self.is_running() is True:

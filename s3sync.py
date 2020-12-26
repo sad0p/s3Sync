@@ -246,7 +246,7 @@ def usage():
           "and pushes additions or file modifications to s3")
 
 
-def main(): 
+def main():
     if len(sys.argv) < 2:
         usage()
         sys.exit()
@@ -259,7 +259,7 @@ def main():
         init(opt_init_dir, config_obj)
 
     if sys.argv[1] == 'update':
-        return update(config_obj)
+        update(config_obj)
 
     if sys.argv[1] == 'tracker' and sys.argv[2] == 'ls':
         tracker_ls(config_obj)
