@@ -7,7 +7,7 @@ import s3hash
 import config
 import dirmonitor as dirmon
 import s3object
-import s3Sync
+import s3sync
 import s3logger
 
 
