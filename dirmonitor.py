@@ -9,7 +9,8 @@ def gen_file_list(root_dir):
     for dir_path, _, file_names in os.walk(root_dir, followlinks=False):
         for fname in file_names:
             wfname = os.path.join(dir_path, fname)
-            file_list.append(wfname)
+            if os.path.islink(wfname) is False:
+                file_list.append(wfname)
     return file_list
 
 
