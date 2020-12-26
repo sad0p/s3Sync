@@ -55,7 +55,10 @@ class S3Daemon():
         while True:
             time.sleep(self.INTERVAL)
             self.logger.info("checking for updates")
-            if s3sync.update(self.config_obj) is True:
+
+            if (s3sync.update(self.config_obj) is True or
+                    s3push.get_que_list(self.config_obj.ques_dir)):
+
                 self.logger.info("Updates present")
                 s3push.run()
             else:
