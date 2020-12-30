@@ -32,7 +32,8 @@ def purged_of_ignored(file_list, ignore_file):
     for item in purge_items:
         if os.path.isdir(item):
             for file_item in file_list:
-                if os.path.commonpath([item, file_item]) == item:
+                if (os.path.commonpath([item, file_item])
+                   == os.path.abspath(item)):
                     remove_items.append(file_item)
         else:
             try:
@@ -242,8 +243,7 @@ def usage():
     print("List of Commands:\n")
     print("init    --- start tracking and backing up files in current "
           "directory")
-    print("update  --- updates for the directory trackers for changes "
-          "and pushes additions or file modifications to s3")
+    print("update  --- updates the directory trackers for changes ")
 
 
 def main():
