@@ -4,7 +4,7 @@ You can configure the script to maintain copies of certain files or directories 
 
 # Tracking a directory
 
-./s3sync init <target-directory>
+./s3sync init &lt;target-directory&gt;
 
 # Manually updating the s3sync records of directory changes
 
