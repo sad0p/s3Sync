@@ -12,6 +12,7 @@ You can configure the script to maintain copies of certain files or directories 
 
 # Displaying currently tracked directories
 
+![Demo Animation](../assets/tracker-ls.png?raw=true)
 ./s3sync tracker ls
 
 # Removing directories that are currently being tracked by s3sync
