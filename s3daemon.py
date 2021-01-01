@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import time
@@ -11,7 +13,7 @@ import s3push
 
 class S3Daemon():
     def __init__(self, config):
-        self.INTERVAL = 10.0
+        self.INTERVAL = 1800
         self.pid_file = os.path.join(config.db_location, 's3daemon.pid')
         self.logger = s3logger.create_logger(config.daemon_log_path)
         self.config_obj = config
