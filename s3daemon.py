@@ -30,7 +30,7 @@ class S3Daemon():
 
         self.pid = os.getpid()
         with open(self.pid_file, 'w') as self.fh:
-            self.fh.write(f'{self.pid}')
+            self.fh.write(f'{self.pid}\n')
         self.logger.info("started daemonization")
         self.run()
 
@@ -41,16 +41,30 @@ class S3Daemon():
             sys.exit(1)
 
         with open(self.pid_file, 'r') as self.fh:
-            self.pid = int(self.fh.read())
+            self.pid = int(self.fh.read().strip('\n'))
 
         self.logger.info(
             f"Terminating daemon with pid {self.pid} in {self.pid_file}")
-
-        os.kill(self.pid, signal.SIGTERM)
+        try:
+            os.kill(self.pid, signal.SIGTERM)
+        except(ProcessLookupError):
+            self.logger.warning("Daemon either crashed or was manually stopped")
         os.remove(self.pid_file)
 
     def is_running(self):
-        return os.path.isfile(self.pid_file)
+        if os.path.isfile(self.pid_file) is True:
+            with open(self.pid_file, 'r') as self.fh:
+                self.pid = int(self.fh.read().strip('\n'))
+            if os.path.isdir(f'/proc/{self.pid}') is True:
+                return True
+            else:
+                self.logger.warning(
+                 f"pidfile -> {self.pid_file} present "
+                 "but the PID isn't assoicated with any running process")
+                os.remove(self.pid_file)
+                return False
+        else:
+            return False
 
     def run(self):
         signal.signal(signal.SIGTERM, self.stop)
