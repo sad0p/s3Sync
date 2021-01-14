@@ -256,7 +256,7 @@ def main():
 
     if sys.argv[1] == 'init':
         opt_init_dir = sys.argv[2] if len(sys.argv) > 2 else os.getcwd()
-        init(opt_init_dir, config_obj)
+        init(os.path.normpath(opt_init_dir), config_obj)
 
     if sys.argv[1] == 'update':
         update(config_obj)
